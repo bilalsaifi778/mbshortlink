@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard — MBS Shortlink</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+  <style>
+    :root {
+      --bg: #0b0f19; --sidebar: #111827; --card: #111827; --border: #1f2937;
+      --text: #f9fafb; --muted: #9ca3af; --primary: #3b82f6; --input: #1f2937;
+    }
+    [data-theme="light"] {
+      --bg: #f3f4f6; --sidebar: #ffffff; --card: #ffffff; --border: #e5e7eb;
+      --text: #111827; --muted: #6b7280; --primary: #2563eb; --input: #f9fafb;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+    body { display: flex; min-height: 100vh; background: var(--bg); color: var(--text); }
+
+    /* Left Sidebar Navigation */
+    aside {
+      width: 260px; background: var(--sidebar); border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; padding: 20px 14px; flex-shrink: 0;
+    }
+    .logo { font-size: 19px; font-weight: 800; padding: 6px 12px 20px; display: flex; align-items: center; gap: 10px; }
+    .logo i { color: var(--primary); }
+    .profile-box {
+      background: var(--input); border: 1px solid var(--border); border-radius: 12px;
+      padding: 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;
+    }
+    .avatar {
+      width: 40px; height: 40px; border-radius: 50%; background: var(--primary);
+      display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; overflow: hidden;
+    }
+    .avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .p-meta { overflow: hidden; }
+    .p-name { font-size: 14px; font-weight: 700; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+    .p-uid { font-size: 11px; color: var(--muted); }
+
+    nav { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+    nav a {
+      display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 10px;
+      color: var(--muted); text-decoration: none; font-size: 14px; font-weight: 600; transition: 0.15s;
+    }
+    nav a:hover, nav a.active { background: rgba(59,130,246,0.15); color: var(--primary); }
+    .logout-btn {
+      width: 100%; padding: 10px; border-radius: 10px; border: 1px solid var(--border);
+      background: transparent; color: #f87171; font-weight: 600; cursor: pointer; margin-top: 12px;
+    }
+
+    /* Main Content */
+    main { flex: 1; padding: 28px; overflow-y: auto; max-width: 1200px; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .theme-btn {
+      background: var(--card); border: 1px solid var(--border); color: var(--text);
+      padding: 8px 12px; border-radius: 10px; cursor: pointer; font-size: 13px;
+    }
+    .banner { padding: 12px 16px; border-radius: 10px; margin-bottom: 18px; font-size: 14px; }
+    .banner.ok { background: rgba(16,185,129,0.15); border: 1px solid #10b981; color: #6ee7b7; }
+    .banner.err { background: rgba(239,68,68,0.15); border: 1px solid #ef4444; color: #fca5a5; }
+
+    .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .stat-card, .panel {
+      background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px;
+    }
+    .stat-label { font-size: 12px; color: var(--muted); text-transform: uppercase; }
+    .stat-val { font-size: 26px; font-weight: 800; margin-top: 6px; }
+    .panel { margin-bottom: 22px; }
+    .panel h3 { font-size: 17px; margin-bottom: 14px; }
+
+    .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+    input, select, textarea {
+      width: 100%; padding: 10px 12px; border-radius: 9px; border: 1px solid var(--border);
+      background: var(--input); color: var(--text); font-size: 14px;
+    }
+    .btn-primary {
+      background: var(--primary); color: #fff; border: none; padding: 10px 18px;
+      border-radius: 9px; font-weight: 600; cursor: pointer;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 11px 10px; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); font-weight: 600; }
+    .copy-pill {
+      background: var(--input); border: 1px solid var(--border); color: var(--primary);
+      padding: 4px 9px; border-radius: 6px; cursor: pointer; font-size: 12px;
+    }
+    @media (max-width: 780px) {
+      body { flex-direction: column; }
+      aside { width: 100%; border-right: none; border-bottom: 1px solid var(--border); }
+      nav { flex-direction: row; flex-wrap: wrap; }
+    }
+  </style>
+</head>
+<body>
+  <aside>
+    <div class="logo"><i class="fa-solid fa-link"></i> MBS Shortlink</div>
+
+    <div class="profile-box">
+      <div class="avatar">
+        <% if (user.avatar_url) { %>
+          <img src="<%= user.avatar_url %>" alt="Avatar" />
+        <% } else { %>
+          <%= user.name.charAt(0).toUpperCase() %>
+        <% } %>
+      </div>
+      <div class="p-meta">
+        <div class="p-name"><%= user.name %></div>
+        <div class="p-uid">ID: #<%= user.uid %> • $<%= parseFloat(user.balance).toFixed(4) %></div>
+      </div>
+    </div>
+
+    <nav>
+      <a href="/dashboard?tab=overview" class="<%= tab === 'overview' ? 'active' : '' %>">
+        <i class="fa-solid fa-gauge"></i> Dashboard
+      </a>
+      <a href="/dashboard?tab=links" class="<%= tab === 'links' ? 'active' : '' %>">
+        <i class="fa-solid fa-scissors"></i> Shortlinks
+      </a>
+      <a href="/dashboard?tab=withdraw" class="<%= tab === 'withdraw' ? 'active' : '' %>">
+        <i class="fa-solid fa-wallet"></i> Withdrawals
+      </a>
+      <a href="/dashboard?tab=profile" class="<%= tab === 'profile' ? 'active' : '' %>">
+        <i class="fa-solid fa-user-gear"></i> Profile
+      </a>
+      <a href="/dashboard?tab=support" class="<%= tab === 'support' ? 'active' : '' %>">
+        <i class="fa-solid fa-headset"></i> Support
+      </a>
+      <% if (user.role === 'admin') { %>
+        <a href="/admin"><i class="fa-solid fa-shield"></i> Admin Panel</a>
+      <% } %>
+    </nav>
+
+    <form method="POST" action="/logout">
+      <button class="logout-btn" type="submit"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+    </form>
+  </aside>
+
+  <main>
+    <div class="header">
+      <h2><%= tab.charAt(0).toUpperCase() + tab.slice(1) %></h2>
+      <button class="theme-btn" id="themeToggle"><i class="fa-solid fa-circle-half-stroke"></i> Theme</button>
+    </div>
+
+    <% if (msg) { %><div class="banner ok"><%= msg %></div><% } %>
+    <% if (err) { %><div class="banner err"><%= err %></div><% } %>
+
+    <% if (tab === 'overview') { %>
+      <div class="grid-4">
+        <div class="stat-card">
+          <div class="stat-label">Available Balance</div>
+          <div class="stat-val" style="color:#10b981;">$<%= parseFloat(user.balance).toFixed(4) %></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Completed 4-Step Views</div>
+          <div class="stat-val"><%= totals.views %></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total Link Clicks</div>
+          <div class="stat-val"><%= totals.clicks %></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Current CPM Rate</div>
+          <div class="stat-val">$<%= cpmRate.toFixed(2) %></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Quick Shortlink Generator</h3>
+        <form method="POST" action="/links/create" class="form-row">
+          <input type="url" name="destination_url" placeholder="https://example.com/your-target-url" required />
+          <input type="text" name="title" placeholder="Link Title (optional)" />
+          <input type="text" name="custom_slug" placeholder="Custom alias (optional)" />
+          <button class="btn-primary" type="submit"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate Shortlink</button>
+        </form>
+      </div>
+    <% } %>
+
+    <% if (tab === 'links') { %>
+      <div class="panel">
+        <h3>Create New Shortlink</h3>
+        <form method="POST" action="/links/create" class="form-row">
+          <input type="url" name="destination_url" placeholder="https://example.com/your-target-url" required />
+          <input type="text" name="title" placeholder="Title (optional)" />
+          <input type="text" name="custom_slug" placeholder="Custom slug (optional)" />
+          <button class="btn-primary" type="submit">Create Shortlink</button>
+        </form>
+      </div>
+
+      <div class="panel">
+        <h3>Your Generated Shortlinks (<%= links.length %>)</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Shortlink</th>
+              <th>Destination</th>
+              <th>Clicks</th>
+              <th>4-Step Views</th>
+              <th>Earned</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% links.forEach(l => { const fullShort = baseUrl + '/s/' + l.slug; %>
+              <tr>
+                <td>
+                  <strong><%= fullShort %></strong><br/>
+                  <button class="copy-pill" onclick="navigator.clipboard.writeText('<%= fullShort %>'); this.textContent='Copied!';">
+                    <i class="fa-regular fa-copy"></i> Copy Link
+                  </button>
+                </td>
+                <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><%= l.destination_url %></td>
+                <td><%= l.clicks %></td>
+                <td><%= l.completed_views %></td>
+                <td>$<%= parseFloat(l.earned).toFixed(4) %></td>
+                <td>
+                  <form method="POST" action="/links/delete/<%= l.id %>" onsubmit="return confirm('Delete this link?')">
+                    <button style="background:none;border:none;color:#f87171;cursor:pointer;"><i class="fa-solid fa-trash"></i></button>
+                  </form>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+
+    <% if (tab === 'withdraw') { %>
+      <div class="panel">
+        <h3>Request Withdrawal (Min: $<%= minWithdraw.toFixed(2) %> | Balance: $<%= parseFloat(user.balance).toFixed(4) %>)</h3>
+        <form method="POST" action="/withdraw" class="form-row">
+          <input type="number" step="0.01" min="<%= minWithdraw %>" name="amount" placeholder="Amount in USD" required />
+          <select name="method">
+            <option value="USDT (BEP20)" <%= user.payout_method === 'USDT (BEP20)' ? 'selected' : '' %>>USDT (BEP20)</option>
+            <option value="USDT (TRC20)" <%= user.payout_method === 'USDT (TRC20)' ? 'selected' : '' %>>USDT (TRC20)</option>
+            <option value="UPI (India)" <%= user.payout_method === 'UPI (India)' ? 'selected' : '' %>>UPI (India)</option>
+            <option value="FaucetPay" <%= user.payout_method === 'FaucetPay' ? 'selected' : '' %>>FaucetPay Email</option>
+          </select>
+          <input type="text" name="address" value="<%= user.payout_address || '' %>" placeholder="Wallet Address / UPI ID" required />
+          <button class="btn-primary" type="submit">Withdraw Funds</button>
+        </form>
+      </div>
+
+      <div class="panel">
+        <h3>Withdrawal History</h3>
+        <table>
+          <thead><tr><th>Date</th><th>Amount</th><th>Method</th><th>Address</th><th>Status</th></tr></thead>
+          <tbody>
+            <% withdrawals.forEach(w => { %>
+              <tr>
+                <td><%= new Date(w.created_at).toLocaleDateString() %></td>
+                <td>$<%= parseFloat(w.amount).toFixed(2) %></td>
+                <td><%= w.method %></td>
+                <td><%= w.address %></td>
+                <td><strong><%= w.status.toUpperCase() %></strong></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+
+    <% if (tab === 'profile') { %>
+      <div class="panel">
+        <h3>Account & Default Payout Settings</h3>
+        <form method="POST" action="/profile/update" style="display:grid;gap:12px;max-width:480px;">
+          <label>User ID: <strong>#<%= user.uid %></strong> | Email: <strong><%= user.email %></strong></label>
+          <input type="text" name="name" value="<%= user.name %>" required />
+          <select name="payout_method">
+            <option value="USDT (BEP20)" <%= user.payout_method === 'USDT (BEP20)' ? 'selected' : '' %>>USDT (BEP20)</option>
+            <option value="USDT (TRC20)" <%= user.payout_method === 'USDT (TRC20)' ? 'selected' : '' %>>USDT (TRC20)</option>
+            <option value="UPI (India)" <%= user.payout_method === 'UPI (India)' ? 'selected' : '' %>>UPI (India)</option>
+            <option value="FaucetPay" <%= user.payout_method === 'FaucetPay' ? 'selected' : '' %>>FaucetPay</option>
+          </select>
+          <input type="text" name="payout_address" value="<%= user.payout_address || '' %>" placeholder="Default Wallet or UPI ID" />
+          <button class="btn-primary" type="submit">Save Profile</button>
+        </form>
+      </div>
+    <% } %>
+
+    <% if (tab === 'support') { %>
+      <div class="panel">
+        <h3>Open Support Ticket</h3>
+        <form method="POST" action="/support/create" style="display:grid;gap:12px;max-width:560px;">
+          <input type="text" name="subject" placeholder="Subject" required />
+          <textarea name="message" rows="4" placeholder="Describe your issue..." required></textarea>
+          <button class="btn-primary" type="submit">Submit Ticket</button>
+        </form>
+      </div>
+
+      <div class="panel">
+        <h3>Your Tickets</h3>
+        <% tickets.forEach(t => { %>
+          <div style="padding:12px 0;border-bottom:1px solid var(--border);">
+            <strong><%= t.subject %></strong> (<%= t.status.toUpperCase() %>)
+            <p style="color:var(--muted);font-size:13px;margin-top:4px;"><%= t.message %></p>
+            <% if (t.admin_reply) { %>
+              <p style="color:#10b981;font-size:13px;margin-top:6px;"><strong>Admin Reply:</strong> <%= t.admin_reply %></p>
+            <% } %>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+  </main>
+
+  <script>
+    const root = document.documentElement;
+    root.setAttribute('data-theme', localStorage.getItem('mbs_theme') || 'dark');
+    document.getElementById('themeToggle').onclick = () => {
+      const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      localStorage.setItem('mbs_theme', next);
+    };
+  </script>
+</body>
+</html>
